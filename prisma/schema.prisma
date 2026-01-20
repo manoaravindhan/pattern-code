@@ -1,0 +1,80 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum SubmissionStatus {
+  pending
+  pass
+  fail
+  error
+}
+
+model User {
+  id          String       @id @default(cuid())
+  handle      String?      @unique
+  createdAt   DateTime     @default(now())
+  submissions Submission[]
+}
+
+model Pattern {
+  id          String      @id @default(cuid())
+  slug        String      @unique
+  name        String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  challenges  Challenge[]
+}
+
+model Challenge {
+  id                   String            @id @default(cuid())
+  patternId            String
+  pattern              Pattern           @relation(fields: [patternId], references: [id], onDelete: Cascade)
+  slug                 String            @unique
+  title                String
+  difficulty           String?
+  description          String?
+  targetPatternDetails String?
+  metadata             Json?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  languageVariants     LanguageVariant[]
+}
+
+model LanguageVariant {
+  id              String       @id @default(cuid())
+  challengeId     String
+  challenge       Challenge    @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  language        String
+  starterFiles    Json
+  harnessFiles    Json
+  hints           Json?
+  runtime         String?
+  version         Int          @default(1)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  submissions     Submission[]
+
+  @@unique([challengeId, language])
+}
+
+model Submission {
+  id                String           @id @default(cuid())
+  userId            String?
+  user              User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  languageVariantId String
+  languageVariant   LanguageVariant  @relation(fields: [languageVariantId], references: [id], onDelete: Cascade)
+  code              String
+  status            SubmissionStatus @default(pending)
+  result            Json?
+  durationMs        Int?
+  createdAt         DateTime         @default(now())
+}
