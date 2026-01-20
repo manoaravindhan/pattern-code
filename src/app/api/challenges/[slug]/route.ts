@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
-interface Params { params: { slug: string } }
+interface Params { params: Promise<{ slug: string }> }
 
 export async function GET(_: Request, { params }: Params) {
-  const { slug } = params;
+  const { slug } = await params;
   const challenge = await prisma.challenge.findUnique({
     where: { slug },
     select: {
